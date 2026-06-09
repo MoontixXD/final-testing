@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rakib's SSC — Post Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0D0F1A;
+    --surface:   #13162A;
+    --card:      #1A1E35;
+    --border:    #252A45;
+    --accent:    #E94560;
+    --fb:        #1877F2;
+    --yt:        #FF0000;
+    --gold:      #FFD166;
+    --green:     #06D6A0;
+    --text:      #E8EAF6;
+    --muted:     #6B7280;
+    --extra:     #2D3561;
+    --extra-txt: #FFC107;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #0D0F1A 0%, #13162A 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+  .logo-text { font-size: 15px; font-weight: 700; letter-spacing: 0.05em; }
+  .logo-sub  { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+  .date-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--gold);
+    background: rgba(255,209,102,0.08);
+    border: 1px solid rgba(255,209,102,0.2);
+    padding: 5px 12px;
+    border-radius: 20px;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0;
+    padding: 20px 24px 0;
+  }
+  .tab {
+    padding: 10px 24px;
+    border-radius: 10px 10px 0 0;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .tab.active-fb { background: var(--card); color: #fff; border-color: var(--fb); border-bottom: 2px solid var(--fb); }
+  .tab.active-yt { background: var(--card); color: #fff; border-color: var(--yt); border-bottom: 2px solid var(--yt); }
+  .tab:hover:not(.active-fb):not(.active-yt) { color: var(--text); }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 12px 12px 12px;
+    overflow: hidden;
+  }
+
+  /* ── DATE NAV ── */
+  .date-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .date-nav button {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .date-nav button:hover { background: var(--border); }
+  .date-nav button:disabled { opacity: 0.3; cursor: default; }
+  .date-display { text-align: center; }
+  .date-display .day-name { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .date-display .date-str { font-size: 17px; font-weight: 700; }
+  .date-display .date-str.weekend { color: var(--gold); }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat {
+    flex: 1;
+    padding: 12px;
+    background: var(--card);
+    text-align: center;
+  }
+  .stat-val { font-size: 20px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .stat-val.green { color: var(--green); }
+  .stat-val.red   { color: var(--accent); }
+  .stat-val.gold  { color: var(--gold); }
+  .stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+  /* ── SLOTS ── */
+  .slots { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+  .slot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    transition: all 0.2s;
+    cursor: pointer;
+    user-select: none;
+  }
+  .slot:hover { border-color: #3a4060; transform: translateX(2px); }
+  .slot.posted {
+    background: rgba(6,214,160,0.06);
+    border-color: rgba(6,214,160,0.25);
+  }
+  .slot.overdue {
+    background: rgba(233,69,96,0.06);
+    border-color: rgba(233,69,96,0.3);
+  }
+  .slot.extra {
+    background: rgba(45,53,97,0.4);
+    border-color: var(--extra);
+    opacity: 0.7;
+  }
+  .slot.extra.posted { opacity: 1; }
+
+  .slot-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 78px;
+    color: var(--text);
+  }
+  .slot.overdue .slot-time { color: var(--accent); }
+  .slot.posted  .slot-time { color: var(--green); }
+
+  .slot-badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .badge-fb    { background: rgba(24,119,242,0.15); color: #6aaff7; border: 1px solid rgba(24,119,242,0.3); }
+  .badge-yt    { background: rgba(255,0,0,0.12); color: #ff6b6b; border: 1px solid rgba(255,0,0,0.25); }
+  .badge-extra { background: rgba(255,193,7,0.1); color: var(--extra-txt); border: 1px solid rgba(255,193,7,0.2); }
+
+  .slot-label { flex: 1; font-size: 13px; color: var(--muted); }
+  .slot.posted  .slot-label { color: var(--green); }
+  .slot.overdue .slot-label { color: var(--accent); }
+
+  .slot-check {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .slot.posted  .slot-check { background: var(--green); border-color: var(--green); }
+  .slot.overdue .slot-check { border-color: var(--accent); }
+
+  /* ── OVERDUE BANNER ── */
+  .overdue-banner {
+    margin: 12px 12px 0;
+    background: rgba(233,69,96,0.1);
+    border: 1px solid rgba(233,69,96,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #ff8fa3;
+    display: none;
+    align-items: center;
+    gap: 10px;
+  }
+  .overdue-banner.visible { display: flex; }
+
+  /* ── WHATSAPP SECTION ── */
+  .wa-section {
+    margin: 16px 12px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .wa-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+  .wa-members { display: flex; flex-direction: column; gap: 8px; }
+  .wa-member {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .wa-member input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .wa-member input:focus { border-color: var(--accent); }
+  .wa-member input::placeholder { color: var(--muted); }
+  .wa-member .remove-btn {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 16px; padding: 4px;
+    transition: color 0.15s;
+  }
+  .wa-member .remove-btn:hover { color: var(--accent); }
+  .add-member-btn {
+    margin-top: 8px;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 8px;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .add-member-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── SEND BUTTON ── */
+  .send-wa-btn {
+    margin: 12px 12px 0;
+    width: calc(100% - 24px);
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 14px;
+    cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s;
+  }
+  .send-wa-btn:hover { opacity: 0.9; }
+  .send-wa-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    z-index: 999;
+    white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error   { border-color: var(--accent); color: var(--accent); }
+  .toast.info    { border-color: var(--gold); color: var(--gold); }
+
+  /* ── SETUP MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 460px;
+    width: 100%;
+  }
+  .modal h2 { font-size: 18px; margin-bottom: 6px; }
+  .modal p  { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+  .modal-step {
+    display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start;
+  }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step-txt { font-size: 13px; line-height: 1.6; color: var(--text); }
+  .step-txt code {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--gold);
+  }
+  .modal-close {
+    margin-top: 20px;
+    width: 100%;
+    background: var(--accent);
+    border: none; border-radius: 10px;
+    color: #fff; font-size: 14px; font-weight: 700;
+    padding: 13px;
+    cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  /* ── BACKEND SETUP ── */
+  .backend-section {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .backend-section label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .backend-row { display: flex; gap: 8px; }
+  .backend-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .backend-row input:focus { border-color: var(--fb); }
+  .backend-row input::placeholder { color: var(--muted); }
+  .save-btn {
+    background: var(--fb);
+    border: none; border-radius: 8px;
+    color: #fff; font-size: 12px; font-weight: 700;
+    padding: 9px 16px; cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    transition: opacity 0.2s;
+  }
+  .save-btn:hover { opacity: 0.85; }
+
+  .sync-status {
+    font-size: 11px; font-family: 'JetBrains Mono', monospace;
+    margin-top: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sync-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted);
+  }
+  .sync-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .sync-dot.error     { background: var(--accent); }
+
+  @media (max-width: 600px) {
+    .tabs { padding: 16px 12px 0; }
+    main  { padding: 0 12px 60px; }
+    .header-inner { padding: 0; }
+    header { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <div>
+        <div class="logo-text">RAKIB'S SSC</div>
+        <div class="logo-sub">Post Tracker</div>
+      </div>
+    </div>
+    <div class="date-badge" id="liveClock">--:-- --</div>
+  </div>
+</header>
+
+<div class="tabs" id="tabs">
+  <div class="tab active-fb" onclick="switchTab('fb')">📘 Facebook</div>
+  <div class="tab" onclick="switchTab('yt')">▶️ YouTube</div>
+</div>
+
+<main>
+  <div class="panel" id="panel">
+
+    <!-- Backend setup bar -->
+    <div class="backend-section">
+      <label>🔗 Google Sheets Backend URL (from your Render/Railway deployment)</label>
+      <div class="backend-row">
+        <input type="text" id="backendUrl" placeholder="https://your-app.onrender.com" />
+        <button class="save-btn" onclick="saveBackendUrl()">Connect</button>
+      </div>
+      <div class="sync-status">
+        <div class="sync-dot" id="syncDot"></div>
+        <span id="syncStatus" style="color:var(--muted)">Not connected</span>
+      </div>
+    </div>
+
+    <!-- Date navigation -->
+    <div class="date-nav">
+      <button onclick="changeDay(-1)" id="prevBtn">‹</button>
+      <div class="date-display">
+        <div class="day-name" id="dayName">—</div>
+        <div class="date-str" id="dateStr">—</div>
+      </div>
+      <button onclick="changeDay(1)" id="nextBtn">›</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-val green" id="statPosted">0</div>
+        <div class="stat-lbl">Posted</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val red" id="statMissed">0</div>
+        <div class="stat-lbl">Missed</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val gold" id="statPct">0%</div>
+        <div class="stat-lbl">Done</div>
+      </div>
+    </div>
+
+    <!-- Overdue banner -->
+    <div class="overdue-banner" id="overdueBanner">
+      <span>🚨</span>
+      <span id="overdueText"></span>
+    </div>
+
+    <!-- Slots -->
+    <div class="slots" id="slotList"></div>
+
+    <!-- WhatsApp notify -->
+    <div class="wa-section">
+      <div class="wa-title">📲 WhatsApp Alert — Team Members</div>
+      <div class="wa-members" id="waMembers"></div>
+      <button class="add-member-btn" onclick="addMember()">+ Add member</button>
+    </div>
+
+    <button class="send-wa-btn" id="sendWaBtn" onclick="sendWhatsAppAlerts()">
+      <span>📲</span> Send Missed Post Alert on WhatsApp
+    </button>
+    <div style="height:16px"></div>
+
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- CallMeBot setup modal -->
+<div class="modal-overlay" id="setupModal" style="display:none">
+  <div class="modal">
+    <h2>⚙️ CallMeBot Setup</h2>
+    <p>Each team member needs to activate CallMeBot once on their own phone to receive WhatsApp alerts.</p>
+    <div class="modal-step">
+      <div class="step-num">1</div>
+      <div class="step-txt">Save this number in WhatsApp contacts:<br><code>+34 644 59 71 68</code> — name it "CallMeBot"</div>
+    </div>
+    <div class="modal-step">
+      <div class="step-num">2</div>
+      <div class="step-txt">Send this exact message to that number:<br><code>I allow callmebot to send me messages</code></div>
+    </div>
+    <div class="modal-step">
+      <div class="step-num">3</div>
+      <div class="step-txt">You'll receive your personal <strong>API key</strong> in ~2 minutes. Enter it in the member row.</div>
+    </div>
+    <button class="modal-close" onclick="document.getElementById('setupModal').style.display='none'">Got it</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────
+const START = new Date(2025, 5, 10); // Jun 10
+const END   = new Date(2025, 6, 10); // Jul 10
+
+const FB_SLOTS = [
+  { time: "11:00 AM", extra: false },
+  { time: "2:00 PM",  extra: true  },
+  { time: "3:00 PM",  extra: false },
+  { time: "4:00 PM",  extra: true  },
+  { time: "7:00 PM",  extra: false },
+  { time: "9:00 PM",  extra: true  },
+  { time: "10:00 PM", extra: false },
+];
+const YT_SLOTS = [
+  { time: "2:00 PM",  extra: false },
+  { time: "3:00 PM",  extra: false },
+  { time: "4:00 PM",  extra: false },
+  { time: "7:00 PM",  extra: false },
+  { time: "9:00 PM",  extra: false },
+  { time: "11:00 PM", extra: false },
+];
+
+// ── STATE ─────────────────────────────────────────────────────
+let currentTab  = 'fb';
+let currentDate = new Date();
+// Clamp to schedule range
+if (currentDate < START) currentDate = new Date(START);
+if (currentDate > END)   currentDate = new Date(END);
+
+// posted[tab][dateKey][timeStr] = true/false
+let posted = JSON.parse(localStorage.getItem('ssc_posted') || '{}');
+// team members [{name, phone, apiKey}]
+let team   = JSON.parse(localStorage.getItem('ssc_team')   || '[]');
+let backendUrl = localStorage.getItem('ssc_backend') || '';
+
+// ── HELPERS ───────────────────────────────────────────────────
+function dateKey(d) {
+  return d.toISOString().split('T')[0];
+}
+function parseTime(str, ref) {
+  const m = str.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!m) return null;
+  let h = parseInt(m[1]), min = parseInt(m[2]);
+  if (m[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+  if (m[3].toUpperCase() === 'AM' && h === 12) h = 0;
+  const d = new Date(ref);
+  d.setHours(h, min, 0, 0);
+  return d;
+}
+function fmtDate(d) {
+  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+function isOverdue(timeStr, graceMin = 60) {
+  const now  = new Date();
+  const slot = parseTime(timeStr, currentDate);
+  if (!slot) return false;
+  const deadline = new Date(slot.getTime() + graceMin * 60000);
+  // Only overdue if it's the same day
+  const today = new Date();
+  if (dateKey(currentDate) !== dateKey(today)) return false;
+  return now >= deadline;
+}
+function isToday(d) {
+  return dateKey(d) === dateKey(new Date());
+}
+function savePosted() {
+  localStorage.setItem('ssc_posted', JSON.stringify(posted));
+}
+function saveTeam() {
+  localStorage.setItem('ssc_team', JSON.stringify(team));
+}
+
+// ── CLOCK ─────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('liveClock').textContent =
+    now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── RENDER ────────────────────────────────────────────────────
+function render() {
+  const slots  = currentTab === 'fb' ? FB_SLOTS : YT_SLOTS;
+  const dk     = dateKey(currentDate);
+  const tabKey = currentTab;
+
+  // Date nav
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const isWE = currentDate.getDay() === 0 || currentDate.getDay() === 6;
+  document.getElementById('dayName').textContent = days[currentDate.getDay()];
+  const ds = document.getElementById('dateStr');
+  ds.textContent = fmtDate(currentDate);
+  ds.className = 'date-str' + (isWE ? ' weekend' : '');
+
+  document.getElementById('prevBtn').disabled = dateKey(currentDate) <= dateKey(START);
+  document.getElementById('nextBtn').disabled = dateKey(currentDate) >= dateKey(END);
+
+  // Tabs
+  const tabEls = document.querySelectorAll('.tab');
+  tabEls[0].className = 'tab' + (currentTab === 'fb' ? ' active-fb' : '');
+  tabEls[1].className = 'tab' + (currentTab === 'yt' ? ' active-yt' : '');
+
+  // Stats (exclude extras for FB)
+  const regularSlots = slots.filter(s => !(currentTab === 'fb' && s.extra));
+  const postedCount  = regularSlots.filter(s => posted[tabKey]?.[dk]?.[s.time]).length;
+  const now = new Date();
+
+  // Only count overdue for today
+  const overdueSlots = isToday(currentDate)
+    ? regularSlots.filter(s => !posted[tabKey]?.[dk]?.[s.time] && isOverdue(s.time))
+    : [];
+
+  const pct = regularSlots.length > 0 ? Math.round(postedCount / regularSlots.length * 100) : 0;
+  document.getElementById('statPosted').textContent = postedCount;
+  document.getElementById('statMissed').textContent = overdueSlots.length;
+  document.getElementById('statPct').textContent    = pct + '%';
+
+  // Overdue banner
+  const banner = document.getElementById('overdueBanner');
+  if (overdueSlots.length > 0) {
+    banner.classList.add('visible');
+    document.getElementById('overdueText').textContent =
+      `${overdueSlots.length} slot${overdueSlots.length > 1 ? 's' : ''} passed 1-hour deadline — send WhatsApp alert below`;
+  } else {
+    banner.classList.remove('visible');
+  }
+
+  // Slot list
+  const list = document.getElementById('slotList');
+  list.innerHTML = '';
+
+  slots.forEach(slot => {
+    const isPosted  = !!posted[tabKey]?.[dk]?.[slot.time];
+    const overdue   = !isPosted && isOverdue(slot.time) && isToday(currentDate);
+    const isExtra   = currentTab === 'fb' && slot.extra;
+
+    const div = document.createElement('div');
+    div.className = 'slot' +
+      (isPosted ? ' posted' : '') +
+      (overdue  ? ' overdue' : '') +
+      (isExtra  ? ' extra'   : '');
+    div.onclick = () => toggleSlot(slot.time);
+
+    const platform = currentTab === 'fb' ? 'fb' : 'yt';
+
+    div.innerHTML = `
+      <span class="slot-time">${slot.time}</span>
+      <span class="slot-badge badge-${platform}">${currentTab === 'fb' ? 'FB' : 'YT'}</span>
+      ${isExtra ? '<span class="slot-badge badge-extra">EXTRA</span>' : ''}
+      <span class="slot-label">
+        ${isPosted ? '✓ Posted' : overdue ? '⚠ Overdue' : isExtra ? 'Post if applicable' : 'Tap to mark posted'}
+      </span>
+      <div class="slot-check">${isPosted ? '✓' : ''}</div>
+    `;
+    list.appendChild(div);
+  });
+
+  // WA button
+  document.getElementById('sendWaBtn').disabled = overdueSlots.length === 0 || team.length === 0;
+
+  renderTeam();
+}
+
+function toggleSlot(timeStr) {
+  const dk = dateKey(currentDate);
+  const tk = currentTab;
+  if (!posted[tk])       posted[tk] = {};
+  if (!posted[tk][dk])   posted[tk][dk] = {};
+  posted[tk][dk][timeStr] = !posted[tk][dk][timeStr];
+  savePosted();
+  syncToBackend(dk, tk, timeStr, posted[tk][dk][timeStr]);
+  render();
+  showToast(posted[tk][dk][timeStr] ? '✓ Marked as posted!' : 'Unmarked', 'success');
+}
+
+// ── DATE NAV ──────────────────────────────────────────────────
+function changeDay(delta) {
+  const d = new Date(currentDate);
+  d.setDate(d.getDate() + delta);
+  if (d < START || d > END) return;
+  currentDate = d;
+  render();
+}
+
+// ── TAB SWITCH ────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  render();
+}
+
+// ── TEAM / WHATSAPP ───────────────────────────────────────────
+function renderTeam() {
+  const container = document.getElementById('waMembers');
+  container.innerHTML = '';
+
+  if (team.length === 0) {
+    container.innerHTML = `<p style="font-size:12px;color:var(--muted);padding:4px 0">
+      No members yet. Add members to enable WhatsApp alerts.
+      <a href="#" onclick="document.getElementById('setupModal').style.display='flex';return false"
+         style="color:var(--accent);text-decoration:none;margin-left:4px">Setup guide →</a>
+    </p>`;
+    return;
+  }
+
+  team.forEach((m, i) => {
+    const row = document.createElement('div');
+    row.className = 'wa-member';
+    row.innerHTML = `
+      <input type="text"   placeholder="Name" value="${m.name   || ''}" oninput="updateMember(${i},'name',this.value)" style="max-width:100px" />
+      <input type="text"   placeholder="+880XXXXXXXXXX" value="${m.phone  || ''}" oninput="updateMember(${i},'phone',this.value)" />
+      <input type="text"   placeholder="API Key" value="${m.apiKey || ''}" oninput="updateMember(${i},'apiKey',this.value)" style="max-width:100px" />
+      <button class="remove-btn" onclick="removeMember(${i})">×</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function addMember() {
+  team.push({ name: '', phone: '', apiKey: '' });
+  saveTeam();
+  renderTeam();
+}
+function removeMember(i) {
+  team.splice(i, 1);
+  saveTeam();
+  renderTeam();
+}
+function updateMember(i, field, val) {
+  team[i][field] = val;
+  saveTeam();
+}
+
+function sendWhatsAppAlerts() {
+  const slots  = currentTab === 'fb' ? FB_SLOTS : YT_SLOTS;
+  const dk     = dateKey(currentDate);
+  const tk     = currentTab;
+
+  const regularSlots = slots.filter(s => !(currentTab === 'fb' && s.extra));
+  const overdue = regularSlots.filter(s =>
+    !posted[tk]?.[dk]?.[s.time] && isOverdue(s.time) && isToday(currentDate)
+  );
+
+  if (overdue.length === 0) { showToast('No overdue slots right now', 'info'); return; }
+  if (team.length === 0)    { showToast('Add team members first', 'error'); return; }
+
+  const platform = currentTab === 'fb' ? '📘 Facebook' : '▶️ YouTube';
+  const lines    = overdue.map(s => `  • ${platform} — ${s.time}`).join('\n');
+  const msg =
+    `🚨 *Rakib's SSC Alert*\n` +
+    `━━━━━━━━━━━━━━━━━━\n` +
+    `*${overdue.length} slot${overdue.length > 1 ? 's' : ''} not posted!*\n\n` +
+    `${lines}\n\n` +
+    `⏰ _1 hour has passed — please post now and mark as done in the tracker._\n` +
+    `📅 ${fmtDate(new Date())}`;
+
+  let sent = 0;
+  team.forEach(m => {
+    if (!m.phone || !m.apiKey) return;
+    const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(m.phone)}&text=${encodeURIComponent(msg)}&apikey=${encodeURIComponent(m.apiKey)}`;
+    // Open in new tab (CallMeBot GET request)
+    fetch(url, { mode: 'no-cors' }).catch(() => {});
+    sent++;
+  });
+
+  showToast(`📲 Alert sent to ${sent} member${sent !== 1 ? 's' : ''}!`, 'success');
+}
+
+// ── BACKEND SYNC ──────────────────────────────────────────────
+function saveBackendUrl() {
+  backendUrl = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
+  localStorage.setItem('ssc_backend', backendUrl);
+  testBackend();
+}
+
+async function testBackend() {
+  const dot    = document.getElementById('syncDot');
+  const status = document.getElementById('syncStatus');
+  if (!backendUrl) {
+    dot.className = 'sync-dot';
+    status.textContent = 'Not connected';
+    status.style.color = 'var(--muted)';
+    return;
+  }
+  try {
+    const res = await fetch(backendUrl + '/ping', { signal: AbortSignal.timeout(5000) });
+    if (res.ok) {
+      dot.className = 'sync-dot connected';
+      status.textContent = 'Connected to Google Sheets';
+      status.style.color = 'var(--green)';
+      showToast('✓ Backend connected!', 'success');
+      loadFromBackend();
+    } else throw new Error();
+  } catch {
+    dot.className = 'sync-dot error';
+    status.textContent = 'Could not connect — check URL';
+    status.style.color = 'var(--accent)';
+  }
+}
+
+async function syncToBackend(dk, tk, timeStr, val) {
+  if (!backendUrl) return;
+  try {
+    await fetch(backendUrl + '/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: dk, platform: tk, time: timeStr, posted: val })
+    });
+  } catch (e) { console.warn('Sync failed', e); }
+}
+
+async function loadFromBackend() {
+  if (!backendUrl) return;
+  try {
+    const res  = await fetch(backendUrl + '/data');
+    const data = await res.json();
+    if (data && data.posted) {
+      posted = data.posted;
+      savePosted();
+      render();
+    }
+  } catch (e) { console.warn('Load failed', e); }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = `toast ${type}`; }, 2800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+if (backendUrl) {
+  document.getElementById('backendUrl').value = backendUrl;
+  testBackend();
+}
+// Auto-refresh every minute to update overdue states
+setInterval(render, 60000);
+render();
+</script>
+</body>
+</html>
